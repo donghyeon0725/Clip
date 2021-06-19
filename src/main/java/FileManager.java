@@ -116,8 +116,6 @@ public class FileManager {
 
             if (!file.exists()) {
                 // png 파일 포멧으로 생성
-                System.out.println(image.getWidth());
-                System.out.println(image.getHeight());
                 ImageIO.write(image, "png", file);
             }
 
@@ -128,7 +126,8 @@ public class FileManager {
 
     public void deleteFile(String fullpath) {
         File file = new File(fullpath);
-        file.delete();
+        if (file.exists())
+            file.delete();
     }
 
     public static void main(String[] args) {

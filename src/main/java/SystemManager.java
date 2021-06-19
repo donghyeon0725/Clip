@@ -1,3 +1,8 @@
+import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
+import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 import lc.kra.system.keyboard.GlobalKeyboardHook;
 import lc.kra.system.keyboard.event.GlobalKeyAdapter;
 import lc.kra.system.keyboard.event.GlobalKeyEvent;
@@ -9,6 +14,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class SystemManager {
 
@@ -20,13 +26,21 @@ public class SystemManager {
 
     private static String file = null;
 
-    private static JFileChooser fFileChooser = new JFileChooser();
+    private static DirectoryChooser directoryChooser = new DirectoryChooser();
 
-
+    private static Keyboard keyboard = null;
 
 //    private static Keyboard keyboard = new Keyboard();
 
     private static boolean run = true;
+
+    static {
+        try {
+            keyboard = new Keyboard();
+        } catch (AWTException e) {
+            e.printStackTrace();
+        }
+    }
 
     public static String getUID() {
         return UUID.randomUUID().toString().replaceAll("-", "");
@@ -44,54 +58,61 @@ public class SystemManager {
 
         keyboardHook.addKeyListener(new GlobalKeyAdapter() {
 
-            Keyboard keyboard = new Keyboard();
+
 
             @Override
             public void keyPressed(GlobalKeyEvent event) {
-
                 // 이미지 추가하기
                 // alt + shift + e
                 if (event.getVirtualKeyCode() == 69 && event.isShiftPressed() && event.isMenuPressed()) {
                     keyboard.releaseKey(KeyEvent.VK_CONTROL);
                     keyboard.releaseKey(KeyEvent.VK_SHIFT);
                     keyboard.releaseKey(KeyEvent.VK_ALT);
-                    // 이미지가 있다면 이미지 업로드
-                    BufferedImage image = clipBoardManager.getClipImage();
 
+
+                    // 파일 png 형식으로
                     file = getUID() + ".png";
 
-                    if (selectedPath != null && image != null)
-                        fileManager.uploadImage(image, selectedPath + File.separator + file);
+                    // 클립보드 이미지 get
+                    BufferedImage image = clipBoardManager.getClipImage();
 
-                    // 선택 경로가 있다면 경로와 함께 키 입력
-                    if (selectedPath != null)
+                    // 이미지가 있으면 업로드
+                    if (selectedPath != null && image != null) {
+                        fileManager.uploadImage(image, selectedPath + File.separator + file);
                         keyboard.type("![default](./img/" + file + ")");
+                    } else {
+
+                    }
                 }
 
                 // 방금 업로드 한 이미지 삭제하기
                 // alt + shift + d
-                if (event.getVirtualKeyCode() == 69 && event.isShiftPressed() && event.isMenuPressed()) {
-                    fileManager.deleteFile(selectedPath + File.separator);
+                if (event.getVirtualKeyCode() == 68 && event.isShiftPressed() && event.isMenuPressed()) {
+                    fileManager.deleteFile(selectedPath + File.separator + file);
                 }
 
 
                 // 경로 선택하기
-                // ctrl + shift + z
-                if (event.getVirtualKeyCode() == 90 && event.isShiftPressed() && event.isControlPressed()) {
+                // alt + shift + q
+                if (event.getVirtualKeyCode() == 81 && event.isShiftPressed() && event.isMenuPressed()) {
                     keyboard.releaseKey(KeyEvent.VK_CONTROL);
                     keyboard.releaseKey(KeyEvent.VK_SHIFT);
                     keyboard.releaseKey(KeyEvent.VK_ALT);
 
-                    fFileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-                    fFileChooser.showSaveDialog(null);
+                    new JFXPanel();
+                    Platform.runLater(() -> {
+                        File file = directoryChooser.showDialog(new Stage());
 
-                    if (!fFileChooser.getSelectedFile().isDirectory())
-                        return;
-
-                    selectedPath = fFileChooser.getSelectedFile().getAbsolutePath();
+                        if (file == null) {
+                            return;
+                        }
+                        selectedPath = file.getAbsolutePath();
+                    });
                 }
 
-                // VK_ESCAPE => 27번으로 esc를 누르면 프로세스를 종료합니다.ㅌㅋㅌ
+
+
+                // VK_ESCAPE => 27번으로 esc를 누르면 프로세스를 종료합니다.
                 if (event.getVirtualKeyCode() == GlobalKeyEvent.VK_ESCAPE) {
                     run = false;
                 }

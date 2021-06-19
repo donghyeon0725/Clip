@@ -15,7 +15,7 @@ public class Keyboard {
 
     public static void main(String... args) throws Exception {
         Keyboard keyboard = new Keyboard();
-        keyboard.type("Hello there, how are you? : ");
+        keyboard.type("Hello there, how are you?");
     }
 
     public Keyboard() throws AWTException {
